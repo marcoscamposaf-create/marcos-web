@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marcos — Gestão Financeira</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f0f4f8;--sidebar:#1e3a5f;--sidebar-hover:#2a4f7c;--primary:#1a56db;
+    --primary-light:#e1effe;--success:#057a55;--success-light:#d1fae5;
+    --danger:#e02424;--danger-light:#fde8e8;--warning:#c27803;--warning-light:#fef3c7;
+    --white:#fff;--gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;
+    --gray-300:#d1d5db;--gray-500:#6b7280;--gray-700:#374151;--gray-900:#111827;
+    --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--gray-700);display:flex;height:100vh;overflow:hidden}
+
+  #sidebar{width:230px;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+  .sb-brand{padding:22px 20px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .sb-brand h1{color:#fff;font-size:1.3rem;font-weight:700;letter-spacing:.5px}
+  .sb-brand p{color:rgba(255,255,255,.5);font-size:.72rem;margin-top:2px}
+  .sb-nav{padding:12px 0;flex:1}
+  .sb-group{padding:10px 16px 4px;font-size:.67rem;font-weight:600;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px}
+  .sb-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;color:rgba(255,255,255,.75);font-size:.85rem;transition:all .15s;border-left:3px solid transparent}
+  .sb-item:hover{background:var(--sidebar-hover);color:#fff}
+  .sb-item.active{background:var(--sidebar-hover);color:#fff;border-left-color:#60a5fa}
+  .sb-item .icon{font-size:1rem;width:20px;text-align:center}
+  .sb-pdf-btn{margin:12px 16px;padding:9px 14px;background:#2563eb;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:8px;transition:background .15s}
+  .sb-pdf-btn:hover{background:#1d4ed8}
+
+  #main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{background:var(--white);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray-200);flex-shrink:0;box-shadow:var(--shadow)}
+  .topbar h2{font-size:1.1rem;font-weight:700;color:var(--gray-900)}
+  .topbar-actions{display:flex;gap:10px;align-items:center}
+  .content{flex:1;overflow-y:auto;padding:24px 28px}
+
+  .btn{padding:8px 16px;border:none;border-radius:7px;cursor:pointer;font-size:.83rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+  .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#1648c0}
+  .btn-success{background:var(--success);color:#fff}.btn-success:hover{background:#046c4e}
+  .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#c81e1e}
+  .btn-ghost{background:transparent;color:var(--gray-700);border:1px solid var(--gray-300)}.btn-ghost:hover{background:var(--gray-100)}
+  .btn-sm{padding:5px 11px;font-size:.77rem}
+  .btn-icon{padding:5px 8px;font-size:.85rem}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:var(--white);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow);border-left:4px solid var(--gray-200)}
+  .kpi.blue{border-left-color:var(--primary)}.kpi.green{border-left-color:var(--success)}
+  .kpi.red{border-left-color:var(--danger)}.kpi.yellow{border-left-color:var(--warning)}
+  .kpi.purple{border-left-color:#7c3aed}.kpi.teal{border-left-color:#0891b2}
+  .kpi-label{font-size:.72rem;color:var(--gray-500);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+  .kpi-value{font-size:1.35rem;font-weight:700;color:var(--gray-900);line-height:1}
+  .kpi-sub{font-size:.72rem;color:var(--gray-500);margin-top:4px}
+
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+  .chart-card{background:var(--white);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .chart-card h3{font-size:.85rem;font-weight:700;color:var(--gray-700);margin-bottom:14px}
+  .chart-wrap{position:relative;height:200px}
+
+  .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:18px}
+  .card-head{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gray-200)}
+  .card-head h3{font-size:.9rem;font-weight:700;color:var(--gray-900)}
+  .card-body{padding:18px}
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  th{background:var(--gray-50);padding:9px 12px;text-align:left;font-size:.73rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--gray-200)}
+  td{padding:9px 12px;border-bottom:1px solid var(--gray-100);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--gray-50)}
+  .tbl-wrap{overflow-x:auto}
+
+  .badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:600}
+  .badge-pago,.badge-recebido{background:var(--success-light);color:var(--success)}
+  .badge-pendente{background:var(--warning-light);color:var(--warning)}
+  .badge-atrasado{background:var(--danger-light);color:var(--danger)}
+  .badge-a-receber{background:var(--primary-light);color:var(--primary)}
+  .badge-1{background:#fee2e2;color:#b91c1c}
+  .badge-2{background:#fef3c7;color:#92400e}
+  .badge-3{background:#dbeafe;color:#1e40af}
+  .badge-4{background:#d1fae5;color:#065f46}
+
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .filters input,.filters select{padding:7px 11px;border:1px solid var(--gray-300);border-radius:7px;font-size:.82rem;background:var(--white);color:var(--gray-700)}
+  .filters input:focus,.filters select:focus{outline:2px solid var(--primary);border-color:transparent}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--white);border-radius:14px;padding:28px;width:520px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+  .modal h2{font-size:1.05rem;font-weight:700;margin-bottom:20px;color:var(--gray-900)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .form-grid .full{grid-column:1/-1}
+  .form-group{display:flex;flex-direction:column;gap:5px}
+  .form-group label{font-size:.78rem;font-weight:600;color:var(--gray-700)}
+  .form-group input,.form-group select,.form-group textarea{padding:8px 11px;border:1px solid var(--gray-300);border-radius:7px;font-size:.83rem;color:var(--gray-700)}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:2px solid var(--primary);border-color:transparent}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--gray-200)}
+
+  .urgentes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:22px}
+  .urgente-card{background:var(--white);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);border-top:3px solid var(--warning)}
+  .urgente-card.critico{border-top-color:var(--danger)}
+  .urgente-nome{font-size:.83rem;font-weight:700;color:var(--gray-900);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .urgente-val{font-size:1rem;font-weight:700;color:var(--danger)}
+  .urgente-info{font-size:.73rem;color:var(--gray-500);margin-top:3px}
+
+  .cat-section{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
+  .cat-section h3{font-size:.95rem;font-weight:700;color:var(--gray-900);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .cat-add-row{display:flex;gap:10px;margin-bottom:14px}
+  .cat-add-row input{flex:1;padding:8px 12px;border:1px solid var(--gray-300);border-radius:7px;font-size:.83rem}
+  .cat-add-row input:focus{outline:2px solid var(--primary);border-color:transparent}
+  .cat-tags{display:flex;flex-wrap:wrap;gap:8px}
+  .cat-tag{display:inline-flex;align-items:center;gap:6px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:99px;padding:4px 12px 4px 14px;font-size:.8rem;color:var(--gray-700)}
+  .cat-tag.pagar{background:var(--primary-light);border-color:#bfdbfe;color:#1e40af}
+  .cat-tag.receber{background:var(--success-light);border-color:#a7f3d0;color:#065f46}
+  .cat-tag.cliente{background:#f5f3ff;border-color:#ddd6fe;color:#5b21b6}
+  .cat-tag button{background:none;border:none;cursor:pointer;color:inherit;opacity:.5;font-size:.85rem;padding:0;line-height:1;display:flex;align-items:center}
+  .cat-tag button:hover{opacity:1}
+  .cat-empty{color:var(--gray-500);font-size:.82rem;font-style:italic}
+
+  .pdf-option{display:flex;align-items:center;gap:10px;padding:12px 14px;border:2px solid var(--gray-200);border-radius:8px;cursor:pointer;margin-bottom:10px;transition:all .15s}
+  .pdf-option:hover,.pdf-option.sel{border-color:var(--primary);background:var(--primary-light)}
+  .pdf-option input{accent-color:var(--primary)}
+  .pdf-option .pdf-opt-text{font-size:.85rem}
+  .pdf-option .pdf-opt-text strong{display:block;color:var(--gray-900)}
+  .pdf-option .pdf-opt-text span{color:var(--gray-500);font-size:.75rem}
+
+  @media(max-width:900px){.charts-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){ #sidebar{width:60px}.sb-item span,.sb-brand p,.sb-brand h1,.sb-group,.sb-pdf-btn span{display:none}.sb-brand{padding:16px 12px}.sb-item{padding:12px;justify-content:center}.content{padding:16px}}
+
+  #toast-wrap{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+  .toast{background:var(--gray-900);color:#fff;padding:10px 18px;border-radius:8px;font-size:.83rem;font-weight:500;animation:slideIn .2s ease;box-shadow:var(--shadow-md);max-width:300px}
+  .toast.success{background:var(--success)}.toast.error{background:var(--danger)}
+  @keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+  .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--gray-500);font-size:.9rem;gap:10px}
+  .spinner{width:20px;height:20px;border:2px solid var(--gray-300);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div class="sb-brand">
+    <h1>📊 Marcos</h1>
+    <p>Gestão Financeira</p>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-group">Principal</div>
+    <div class="sb-item active" onclick="showPage('dashboard')"><span class="icon">🏠</span><span>Dashboard</span></div>
+    <div class="sb-group">Despesas</div>
+    <div class="sb-item" onclick="showPage('nova-despesa')"><span class="icon">➕</span><span>Nova Despesa</span></div>
+    <div class="sb-item" onclick="showPage('despesas')"><span class="icon">📋</span><span>Gerenciar</span></div>
+    <div class="sb-group">Receitas</div>
+    <div class="sb-item" onclick="showPage('nova-receita')"><span class="icon">➕</span><span>Nova Receita</span></div>
+    <div class="sb-item" onclick="showPage('recebimentos')"><span class="icon">💰</span><span>Gerenciar</span></div>
+    <div class="sb-group">Configurações</div>
+    <div class="sb-item" onclick="showPage('categorias')"><span class="icon">🏷️</span><span>Categorias</span></div>
+  </nav>
+  <button class="sb-pdf-btn" onclick="openPdfModal()">
+    <span>📄</span><span>Relatório PDF</span>
+  </button>
+</div>
+
+<div id="main">
+  <div class="topbar">
+    <h2 id="page-title">Dashboard</h2>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+  <div class="content" id="content">
+    <div class="loading"><div class="spinner"></div> Carregando...</div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal-box">
+    <h2 id="modal-title"></h2>
+    <div id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pdf-overlay">
+  <div class="modal" style="max-width:420px">
+    <h2>📄 Gerar Relatório PDF</h2>
+    <div id="pdf-modal-body">
+      <p style="font-size:.83rem;color:var(--gray-500);margin-bottom:16px">Escolha o tipo de relatório a gerar:</p>
+      <label class="pdf-option sel" id="opt-completo">
+        <input type="radio" name="pdf-tipo" value="completo" checked onchange="updatePdfOpts()">
+        <div class="pdf-opt-text"><strong>Relatório Completo</strong><span>Dashboard + Despesas + Receitas</span></div>
+      </label>
+      <label class="pdf-option" id="opt-despesas">
+        <input type="radio" name="pdf-tipo" value="despesas" onchange="updatePdfOpts()">
+        <div class="pdf-opt-text"><strong>Somente Despesas</strong><span>Contas a pagar detalhadas</span></div>
+      </label>
+      <label class="pdf-option" id="opt-recebimentos">
+        <input type="radio" name="pdf-tipo" value="recebimentos" onchange="updatePdfOpts()">
+        <div class="pdf-opt-text"><strong>Somente Receitas</strong><span>Contas a receber detalhadas</span></div>
+      </label>
+      <div style="margin-top:16px">
+        <label style="font-size:.78rem;font-weight:600;color:var(--gray-700);display:block;margin-bottom:5px">Filtrar por mês (opcional)</label>
+        <input type="month" id="pdf-mes" style="padding:8px 12px;border:1px solid var(--gray-300);border-radius:7px;font-size:.83rem;width:100%">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePdfModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="gerarPdf()" id="pdf-gen-btn">📥 Baixar PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let CONFIG = {categorias:[], categorias_receber:[], formas:[], clientes:[]};
+let currentPage = 'dashboard';
+let charts = {};
+
+const fmt = v => 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtDate = s => s ? new Date(s+'T12:00').toLocaleDateString('pt-BR') : '';
+const today = () => new Date().toISOString().slice(0,10);
+
+function toast(msg, type='success', ms=3000){
+  const w=document.getElementById('toast-wrap');
+  const d=document.createElement('div');
+  d.className='toast '+type; d.textContent=msg;
+  w.appendChild(d); setTimeout(()=>d.remove(),ms);
+}
+
+function showPage(p){
+  currentPage=p;
+  document.querySelectorAll('.sb-item').forEach(el=>{
+    el.classList.toggle('active', el.getAttribute('onclick')?.includes(`'${p}'`));
+  });
+  const titles={
+    'dashboard':'Dashboard','nova-despesa':'Nova Despesa','despesas':'Gerenciar Despesas',
+    'nova-receita':'Nova Receita','recebimentos':'Gerenciar Recebimentos','categorias':'Categorias'
+  };
+  document.getElementById('page-title').textContent = titles[p]||p;
+  document.getElementById('topbar-actions').innerHTML='';
+  Object.values(charts).forEach(c=>c.destroy());
+  charts={};
+  const c=document.getElementById('content');
+  c.innerHTML='<div class="loading"><div class="spinner"></div> Carregando...</div>';
+  if(p==='dashboard') loadDashboard();
+  else if(p==='nova-despesa') renderFormDespesa();
+  else if(p==='despesas') loadDespesas();
+  else if(p==='nova-receita') renderFormReceita();
+  else if(p==='recebimentos') loadRecebimentos();
+  else if(p==='categorias') loadCategorias();
+}
+
+async function loadDashboard(){
+  const [dash] = await Promise.all([fetch('/api/dashboard').then(r=>r.json())]);
+  const c=document.getElementById('content');
+  const saldoCls = dash.saldo_liquido>=0?'green':'red';
+
+  c.innerHTML=`
+  <div class="kpi-grid">
+    <div class="kpi blue"><div class="kpi-label">Caixa Disponível</div><div class="kpi-value">${fmt(dash.caixa)}</div><div class="kpi-sub">
+      <button class="btn btn-ghost btn-sm" onclick="editarCaixa(${dash.caixa})">Editar</button></div></div>
+    <div class="kpi red"><div class="kpi-label">A Pagar (pendente)</div><div class="kpi-value">${fmt(dash.total_pagar)}</div><div class="kpi-sub">${dash.total_pendentes} contas</div></div>
+    <div class="kpi green"><div class="kpi-label">A Receber</div><div class="kpi-value">${fmt(dash.ta_receber)}</div><div class="kpi-sub">Total esperado: ${fmt(dash.total_receber)}</div></div>
+    <div class="kpi ${saldoCls}"><div class="kpi-label">Saldo Líquido</div><div class="kpi-value">${fmt(dash.saldo_liquido)}</div><div class="kpi-sub">Caixa + Receber - Pagar</div></div>
+    <div class="kpi yellow"><div class="kpi-label">Vencidas</div><div class="kpi-value">${fmt(dash.vencidas)}</div><div class="kpi-sub">Contas em atraso</div></div>
+    <div class="kpi teal"><div class="kpi-label">Meses de Caixa</div><div class="kpi-value">${dash.meses_caixa}</div><div class="kpi-sub">Autonomia financeira</div></div>
+    <div class="kpi purple"><div class="kpi-label">Taxa Liquidação</div><div class="kpi-value">${dash.taxa_liquidacao}%</div><div class="kpi-sub">Do total pago</div></div>
+  </div>
+
+  ${dash.urgentes?.length?`
+  <div class="card">
+    <div class="card-head"><h3>⚠️ Vencendo em 7 dias</h3></div>
+    <div class="card-body" style="padding:14px">
+      <div class="urgentes-grid">${dash.urgentes.map(u=>`
+        <div class="urgente-card${u.prioridade==='1-CRITICO'?' critico':''}">
+          <div class="urgente-nome">${u.fornecedor||u.descricao||'—'}</div>
+          <div class="urgente-val">${fmt(u.valor_previsto)}</div>
+          <div class="urgente-info">
+            ${fmtDate(u.vencimento)} · 
+            ${u.dias<0?`<span style="color:var(--danger)">${Math.abs(u.dias)}d atrasado</span>`:`${u.dias}d restantes`}
+            · ${u.categoria}
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`:''}
+
+  <div class="charts-grid">
+    <div class="chart-card"><h3>Despesas por Mês</h3><div class="chart-wrap"><canvas id="ch-mes"></canvas></div></div>
+    <div class="chart-card"><h3>Por Prioridade (pendentes)</h3><div class="chart-wrap"><canvas id="ch-prio"></canvas></div></div>
+    <div class="chart-card"><h3>Receitas por Mês</h3><div class="chart-wrap"><canvas id="ch-recb"></canvas></div></div>
+    <div class="chart-card"><h3>Top Categorias</h3><div class="chart-wrap"><canvas id="ch-cat"></canvas></div></div>
+  </div>`;
+
+  const meses = dash.por_mes || [];
+  const labels = meses.map(m=>{ const [y,mo]=m.mes.split('-'); return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y.slice(2); });
+  charts.mes = new Chart(document.getElementById('ch-mes'),{type:'bar',data:{labels,datasets:[
+    {label:'Pago',data:meses.map(m=>m.pago),backgroundColor:'#057a5588',borderColor:'#057a55',borderWidth:1},
+    {label:'Pendente',data:meses.map(m=>m.pendente),backgroundColor:'#c2780388',borderColor:'#c27803',borderWidth:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{stacked:true,ticks:{font:{size:9}}},y:{stacked:true,ticks:{font:{size:9},callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}});
+
+  const prios = dash.por_prioridade||{};
+  const prioLabels = Object.keys(prios).sort();
+  const prioColors = {'1-CRITICO':'#e02424','2-ALTO':'#c27803','3-MEDIO':'#1a56db','4-BAIXO':'#057a55','Pago':'#6b7280'};
+  charts.prio = new Chart(document.getElementById('ch-prio'),{type:'doughnut',data:{labels:prioLabels,datasets:[{data:prioLabels.map(p=>prios[p].valor),backgroundColor:prioLabels.map(p=>prioColors[p]||'#aaa')}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:10},boxWidth:12}}}}});
+
+  const recbMes = dash.por_mes_recb||[];
+  const labelsR = recbMes.map(m=>{ const [y,mo]=m.mes.split('-'); return ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][+mo-1]+'/'+y.slice(2); });
+  charts.recb = new Chart(document.getElementById('ch-recb'),{type:'bar',data:{labels:labelsR,datasets:[
+    {label:'Esperado',data:recbMes.map(m=>m.esperado),backgroundColor:'#1a56db44',borderColor:'#1a56db',borderWidth:1},
+    {label:'Recebido',data:recbMes.map(m=>m.recebido),backgroundColor:'#057a5588',borderColor:'#057a55',borderWidth:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10}}}},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:9},callback:v=>'R$'+v.toLocaleString('pt-BR')}}}}});
+
+  const cats = dash.top_categorias||[];
+  charts.cat = new Chart(document.getElementById('ch-cat'),{type:'bar',data:{labels:cats.map(c=>c.cat),datasets:[{data:cats.map(c=>c.valor),backgroundColor:['#1a56db','#7c3aed','#c27803','#e02424','#057a55','#0891b2']}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:9},callback:v=>'R$'+v.toLocaleString('pt-BR')}},y:{ticks:{font:{size:9}}}}}});
+}
+
+function editarCaixa(atual){
+  openModal('Editar Saldo de Caixa',`
+    <div class="form-group"><label>Valor atual em Caixa</label>
+    <input type="number" id="novo-caixa" value="${atual}" step="0.01" min="0"></div>`,
+    [{label:'Cancelar',cls:'btn-ghost',fn:'closeModal()'},
+     {label:'Salvar',cls:'btn-primary',fn:'salvarCaixa()'}]);
+}
+async function salvarCaixa(){
+  const v=parseFloat(document.getElementById('novo-caixa').value)||0;
+  await fetch('/api/caixa',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor:v})});
+  closeModal(); toast('Caixa atualizado!'); loadDashboard();
+}
+
+function renderFormDespesa(data={}){
+  const c=document.getElementById('content');
+  const cats=CONFIG.categorias.map(c=>`<option value="${c}" ${data.categoria===c?'selected':''}>${c}</option>`).join('');
+  const formas=CONFIG.formas.map(f=>`<option value="${f}" ${data.forma_pgto===f?'selected':''}>${f}</option>`).join('');
+  c.innerHTML=`<div class="card"><div class="card-head"><h3>${data.row?'Editar Despesa':'Nova Despesa'}</h3></div><div class="card-body">
+  <form id="form-desp" onsubmit="salvarDespesa(event,${data.row||0})">
+    <div class="form-grid">
+      <div class="form-group"><label>Vencimento *</label><input type="date" name="vencimento" value="${data.vencimento||today()}" required></div>
+      <div class="form-group"><label>Valor Previsto *</label><input type="number" name="valor_previsto" value="${data.valor_previsto||''}" step="0.01" min="0" required placeholder="0,00"></div>
+      <div class="form-group"><label>Fornecedor</label><input type="text" name="fornecedor" value="${data.fornecedor||''}" placeholder="Nome do fornecedor"></div>
+      <div class="form-group"><label>Categoria</label><select name="categoria"><option value="">— Selecione —</option>${cats}</select></div>
+      <div class="form-group full"><label>Descrição</label><input type="text" name="descricao" value="${data.descricao||''}" placeholder="Descrição da despesa"></div>
+      <div class="form-group"><label>Forma de Pagamento</label><select name="forma_pgto"><option value="">— Selecione —</option>${formas}</select></div>
+      <div class="form-group"><label>Já Liquidado?</label>
+        <select name="liquidado"><option value="Não" ${data.liquidado!=='Sim'?'selected':''}>Não</option><option value="Sim" ${data.liquidado==='Sim'?'selected':''}>Sim</option></select></div>
+      <div class="form-group"><label>Valor Pago</label><input type="number" name="valor_pago" value="${data.valor_pago||0}" step="0.01" min="0"></div>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px">
+      <button type="submit" class="btn btn-primary">💾 Salvar Despesa</button>
+      <button type="button" class="btn btn-ghost" onclick="showPage('despesas')">Cancelar</button>
+    </div>
+  </form></div></div>`;
+}
+
+async function salvarDespesa(e, row){
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const body=Object.fromEntries(fd.entries());
+  const url=row?`/api/despesas/${row}`:'/api/despesas';
+  const method=row?'PUT':'POST';
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){ toast(row?'Despesa atualizada!':'Despesa salva!'); showPage('despesas'); }
+  else toast('Erro ao salvar','error');
+}
+
+let despesasData=[];
+async function loadDespesas(){
+  despesasData=await fetch('/api/despesas').then(r=>r.json());
+  const c=document.getElementById('content');
+  c.innerHTML=`
+  <div class="card">
+    <div class="card-head">
+      <h3>Contas a Pagar</h3>
+      <button class="btn btn-primary btn-sm" onclick="showPage('nova-despesa')">➕ Nova</button>
+    </div>
+    <div class="card-body">
+      <div class="filters">
+        <input type="text" id="f-busca" placeholder="🔍 Buscar..." oninput="renderDespesas()" style="min-width:180px">
+        <select id="f-status" onchange="renderDespesas()">
+          <option value="">Todos status</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Atrasado">Atrasado</option>
+          <option value="Pago">Pago</option>
+        </select>
+        <select id="f-cat" onchange="renderDespesas()">
+          <option value="">Todas categorias</option>
+          ${CONFIG.categorias.map(c=>`<option>${c}</option>`).join('')}
+        </select>
+        <select id="f-mes" onchange="renderDespesas()">
+          <option value="">Todos meses</option>
+          ${[...new Set(despesasData.map(d=>d.vencimento?.slice(0,7)))].sort().map(m=>`<option value="${m}">${m}</option>`).join('')}
+        </select>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Vencimento</th><th>Fornecedor</th><th>Categoria</th><th>Forma</th><th style="text-align:right">Previsto</th><th style="text-align:right">Pago</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-desp"></tbody>
+      </table></div>
+    </div>
+  </div>`;
+  renderDespesas();
+}
+
+function renderDespesas(){
+  const busca=(document.getElementById('f-busca')?.value||'').toLowerCase();
+  const st=document.getElementById('f-status')?.value||'';
+  const cat=document.getElementById('f-cat')?.value||'';
+  const mes=document.getElementById('f-mes')?.value||'';
+  let rows=despesasData.filter(d=>{
+    if(st && d.status!==st) return false;
+    if(cat && d.categoria!==cat) return false;
+    if(mes && !d.vencimento?.startsWith(mes)) return false;
+    if(busca && !`${d.fornecedor} ${d.descricao} ${d.categoria}`.toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  const prioBadge={'1-CRITICO':'badge-1','2-ALTO':'badge-2','3-MEDIO':'badge-3','4-BAIXO':'badge-4','Pago':'badge-pago'};
+  const stBadge={'Pago':'badge-pago','Pendente':'badge-pendente','Atrasado':'badge-atrasado'};
+  document.getElementById('tbody-desp').innerHTML=rows.map(d=>`
+    <tr>
+      <td>${fmtDate(d.vencimento)}</td>
+      <td><strong>${d.fornecedor||'—'}</strong>${d.descricao?`<br><small style="color:var(--gray-500)">${d.descricao}</small>`:''}</td>
+      <td><span class="badge ${prioBadge[d.prioridade]||''}">${d.categoria||'—'}</span></td>
+      <td style="font-size:.78rem">${d.forma_pgto||'—'}</td>
+      <td style="text-align:right;font-weight:600">${fmt(d.valor_previsto)}</td>
+      <td style="text-align:right;color:var(--success)">${d.valor_pago>0?fmt(d.valor_pago):'—'}</td>
+      <td><span class="badge ${stBadge[d.status]||''}">${d.status}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          ${d.liquidado!=='Sim'?`<button class="btn btn-success btn-icon btn-sm" onclick="pagarDespesa(${d.row},${d.valor_previsto})" title="Marcar pago">✓</button>`:''}
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="editarDespesa(${d.row})" title="Editar">✏️</button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="deletarDespesa(${d.row})" title="Deletar">✕</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--gray-500);padding:24px">Nenhuma despesa encontrada</td></tr>';
+}
+
+function pagarDespesa(row, valprev){
+  openModal('Marcar como Pago',`
+    <div class="form-group"><label>Valor Pago</label>
+    <input type="number" id="val-pago" value="${valprev}" step="0.01" min="0"></div>`,
+    [{label:'Cancelar',cls:'btn-ghost',fn:'closeModal()'},
+     {label:'Confirmar Pagamento',cls:'btn-success',fn:`confirmarPagamento(${row})`}]);
+}
+async function confirmarPagamento(row){
+  const vp=parseFloat(document.getElementById('val-pago').value)||0;
+  await fetch(`/api/despesas/${row}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({liquidado:'Sim',valor_pago:vp})});
+  closeModal(); toast('Pagamento registrado!'); loadDespesas();
+}
+
+async function editarDespesa(row){
+  const desp=despesasData.find(d=>d.row===row);
+  if(desp){ showPage('nova-despesa'); setTimeout(()=>renderFormDespesa(desp),50); }
+}
+async function deletarDespesa(row){
+  if(!confirm('Deletar esta despesa?')) return;
+  await fetch(`/api/despesas/${row}`,{method:'DELETE'});
+  toast('Despesa removida','success'); loadDespesas();
+}
+
+function renderFormReceita(data={}){
+  const c=document.getElementById('content');
+  const clientes=CONFIG.clientes.map(cl=>`<option value="${cl}" ${data.cliente===cl?'selected':''}>${cl}</option>`).join('');
+  c.innerHTML=`<div class="card"><div class="card-head"><h3>${data.row?'Editar Receita':'Nova Receita'}</h3></div><div class="card-body">
+  <form id="form-recb" onsubmit="salvarReceita(event,${data.row||0})">
+    <div class="form-grid">
+      <div class="form-group"><label>Vencimento *</label><input type="date" name="vencimento" value="${data.vencimento||today()}" required></div>
+      <div class="form-group"><label>Valor Esperado *</label><input type="number" name="valor_esperado" value="${data.valor_esperado||''}" step="0.01" min="0" required placeholder="0,00"></div>
+      <div class="form-group full"><label>Cliente</label>
+        <select name="cliente"><option value="">— Selecione ou digite —</option>${clientes}</select></div>
+      <div class="form-group full"><label>Descrição</label><input type="text" name="descricao" value="${data.descricao||''}" placeholder="Descrição do recebimento"></div>
+      <div class="form-group"><label>Valor Recebido</label><input type="number" name="valor_recebido" value="${data.valor_recebido||0}" step="0.01" min="0"></div>
+    </div>
+    <div style="margin-top:18px;display:flex;gap:10px">
+      <button type="submit" class="btn btn-success">💾 Salvar Receita</button>
+      <button type="button" class="btn btn-ghost" onclick="showPage('recebimentos')">Cancelar</button>
+    </div>
+  </form></div></div>`;
+}
+
+async function salvarReceita(e, row){
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const body=Object.fromEntries(fd.entries());
+  const url=row?`/api/recebimentos/${row}`:'/api/recebimentos';
+  const method=row?'PUT':'POST';
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(r.ok){ toast(row?'Receita atualizada!':'Receita salva!'); showPage('recebimentos'); }
+  else toast('Erro ao salvar','error');
+}
+
+let recebData=[];
+async function loadRecebimentos(){
+  recebData=await fetch('/api/recebimentos').then(r=>r.json());
+  const c=document.getElementById('content');
+  c.innerHTML=`
+  <div class="card">
+    <div class="card-head">
+      <h3>Contas a Receber</h3>
+      <button class="btn btn-success btn-sm" onclick="showPage('nova-receita')">➕ Nova</button>
+    </div>
+    <div class="card-body">
+      <div class="filters">
+        <input type="text" id="fr-busca" placeholder="🔍 Buscar..." oninput="renderReceb()">
+        <select id="fr-status" onchange="renderReceb()">
+          <option value="">Todos status</option>
+          <option value="A Receber">A Receber</option>
+          <option value="Atrasado">Atrasado</option>
+          <option value="Recebido">Recebido</option>
+        </select>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Vencimento</th><th>Cliente</th><th>Descrição</th><th style="text-align:right">Esperado</th><th style="text-align:right">Recebido</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tbody-recb"></tbody>
+      </table></div>
+    </div>
+  </div>`;
+  renderReceb();
+}
+
+function renderReceb(){
+  const busca=(document.getElementById('fr-busca')?.value||'').toLowerCase();
+  const st=document.getElementById('fr-status')?.value||'';
+  let rows=recebData.filter(r=>{
+    if(st && r.status!==st) return false;
+    if(busca && !`${r.cliente} ${r.descricao}`.toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  const stBadge={'Recebido':'badge-recebido','A Receber':'badge-a-receber','Atrasado':'badge-atrasado'};
+  document.getElementById('tbody-recb').innerHTML=rows.map(r=>`
+    <tr>
+      <td>${fmtDate(r.vencimento)}</td>
+      <td><strong>${r.cliente||'—'}</strong></td>
+      <td>${r.descricao||'—'}</td>
+      <td style="text-align:right;font-weight:600">${fmt(r.valor_esperado)}</td>
+      <td style="text-align:right;color:var(--success)">${r.valor_recebido>0?fmt(r.valor_recebido):'—'}</td>
+      <td><span class="badge ${stBadge[r.status]||''}">${r.status}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          ${r.status!=='Recebido'?`<button class="btn btn-success btn-icon btn-sm" onclick="receberPagamento(${r.row},${r.valor_esperado})" title="Marcar recebido">✓</button>`:''}
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="editarReceita(${r.row})" title="Editar">✏️</button>
+          <button class="btn btn-danger btn-icon btn-sm" onclick="deletarReceita(${r.row})" title="Deletar">✕</button>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--gray-500);padding:24px">Nenhum recebimento encontrado</td></tr>';
+}
+
+function receberPagamento(row, valesp){
+  openModal('Registrar Recebimento',`
+    <div class="form-group"><label>Valor Recebido</label>
+    <input type="number" id="val-rec" value="${valesp}" step="0.01" min="0"></div>`,
+    [{label:'Cancelar',cls:'btn-ghost',fn:'closeModal()'},
+     {label:'Confirmar',cls:'btn-success',fn:`confirmarRecebimento(${row})`}]);
+}
+async function confirmarRecebimento(row){
+  const vr=parseFloat(document.getElementById('val-rec').value)||0;
+  await fetch(`/api/recebimentos/${row}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({valor_recebido:vr})});
+  closeModal(); toast('Recebimento registrado!'); loadRecebimentos();
+}
+async function editarReceita(row){
+  const rec=recebData.find(r=>r.row===row);
+  if(rec){ showPage('nova-receita'); setTimeout(()=>renderFormReceita(rec),50); }
+}
+async function deletarReceita(row){
+  if(!confirm('Deletar este recebimento?')) return;
+  await fetch(`/api/recebimentos/${row}`,{method:'DELETE'});
+  toast('Recebimento removido'); loadRecebimentos();
+}
+
+let catsData = {};
+
+async function loadCategorias(){
+  catsData = await fetch('/api/categorias').then(r=>r.json());
+  renderCategorias();
+}
+
+function renderCategorias(){
+  const c = document.getElementById('content');
+  const mkTags = (lista, tipo, delfn) => lista.length
+    ? lista.map(n=>`<span class="cat-tag ${tipo}">${n}<button onclick="${delfn}('${n.replace(/'/g,"\\'")}')">✕</button></span>`).join('')
+    : `<span class="cat-empty">Nenhuma categoria cadastrada</span>`;
+
+  c.innerHTML=`
+  <div class="cat-section">
+    <h3>🔴 Categorias — Contas a Pagar</h3>
+    <div class="cat-add-row">
+      <input type="text" id="inp-cat-pagar" placeholder="Nome da nova categoria..." maxlength="60"
+        onkeydown="if(event.key==='Enter'){addCatPagar();event.preventDefault()}">
+      <button class="btn btn-primary" onclick="addCatPagar()">➕ Adicionar</button>
+    </div>
+    <div class="cat-tags" id="tags-pagar">${mkTags(catsData.categorias_pagar||[],'pagar','delCatPagar')}</div>
+  </div>
+
+  <div class="cat-section">
+    <h3>🟢 Categorias — Contas a Receber</h3>
+    <div class="cat-add-row">
+      <input type="text" id="inp-cat-receber" placeholder="Nome da nova categoria..." maxlength="60"
+        onkeydown="if(event.key==='Enter'){addCatReceber();event.preventDefault()}">
+      <button class="btn btn-success" onclick="addCatReceber()">➕ Adicionar</button>
+    </div>
+    <div class="cat-tags" id="tags-receber">${mkTags(catsData.categorias_receber||[],'receber','delCatReceber')}</div>
+  </div>
+
+  <div class="cat-section">
+    <h3>🟣 Clientes / Fontes de Receita</h3>
+    <div class="cat-add-row">
+      <input type="text" id="inp-cliente" placeholder="Nome do cliente ou fonte..." maxlength="80"
+        onkeydown="if(event.key==='Enter'){addCliente();event.preventDefault()}">
+      <button class="btn btn-ghost" style="border-color:#7c3aed;color:#7c3aed" onclick="addCliente()">➕ Adicionar</button>
+    </div>
+    <div class="cat-tags" id="tags-clientes">${mkTags(catsData.clientes||[],'cliente','delCliente')}</div>
+  </div>`;
+}
+
+async function addCatPagar(){
+  const inp = document.getElementById('inp-cat-pagar');
+  const nome = inp.value.trim();
+  if(!nome) return;
+  const r = await fetch('/api/categorias/pagar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
+  const d = await r.json();
+  if(d.ok){ catsData.categorias_pagar=d.categorias_pagar; CONFIG.categorias=d.categorias_pagar; inp.value=''; renderCategorias(); toast('Categoria adicionada!'); }
+  else toast(d.erro||'Erro','error');
+}
+
+async function delCatPagar(nome){
+  if(!confirm(`Remover categoria "${nome}"?`)) return;
+  const r = await fetch(`/api/categorias/pagar/${encodeURIComponent(nome)}`,{method:'DELETE'});
+  const d = await r.json();
+  if(d.ok){ catsData.categorias_pagar=d.categorias_pagar; CONFIG.categorias=d.categorias_pagar; renderCategorias(); toast('Categoria removida'); }
+  else toast(d.erro||'Erro','error');
+}
+
+async function addCatReceber(){
+  const inp = document.getElementById('inp-cat-receber');
+  const nome = inp.value.trim();
+  if(!nome) return;
+  const r = await fetch('/api/categorias/receber',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
+  const d = await r.json();
+  if(d.ok){ catsData.categorias_receber=d.categorias_receber; CONFIG.categorias_receber=d.categorias_receber; inp.value=''; renderCategorias(); toast('Categoria adicionada!'); }
+  else toast(d.erro||'Erro','error');
+}
+
+async function delCatReceber(nome){
+  if(!confirm(`Remover categoria "${nome}"?`)) return;
+  const r = await fetch(`/api/categorias/receber/${encodeURIComponent(nome)}`,{method:'DELETE'});
+  const d = await r.json();
+  if(d.ok){ catsData.categorias_receber=d.categorias_receber; CONFIG.categorias_receber=d.categorias_receber; renderCategorias(); toast('Categoria removida'); }
+  else toast(d.erro||'Erro','error');
+}
+
+async function addCliente(){
+  const inp = document.getElementById('inp-cliente');
+  const nome = inp.value.trim();
+  if(!nome) return;
+  const r = await fetch('/api/categorias/clientes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome})});
+  const d = await r.json();
+  if(d.ok){ catsData.clientes=d.clientes; CONFIG.clientes=d.clientes; inp.value=''; renderCategorias(); toast('Cliente adicionado!'); }
+  else toast(d.erro||'Erro','error');
+}
+
+async function delCliente(nome){
+  if(!confirm(`Remover cliente "${nome}"?`)) return;
+  const r = await fetch(`/api/categorias/clientes/${encodeURIComponent(nome)}`,{method:'DELETE'});
+  const d = await r.json();
+  if(d.ok){ catsData.clientes=d.clientes; CONFIG.clientes=d.clientes; renderCategorias(); toast('Cliente removido'); }
+  else toast(d.erro||'Erro','error');
+}
+
+function openPdfModal(){ document.getElementById('pdf-overlay').classList.add('open'); }
+function closePdfModal(){ document.getElementById('pdf-overlay').classList.remove('open'); }
+function updatePdfOpts(){
+  ['completo','despesas','recebimentos'].forEach(v=>{
+    const radio = document.querySelector(`input[name="pdf-tipo"][value="${v}"]`);
+    document.getElementById('opt-'+v).classList.toggle('sel', radio.checked);
+  });
+}
+async function gerarPdf(){
+  const tipo = document.querySelector('input[name="pdf-tipo"]:checked')?.value||'completo';
+  const mes = document.getElementById('pdf-mes').value||'';
+  const btn = document.getElementById('pdf-gen-btn');
+  btn.textContent='⏳ Gerando...'; btn.disabled=true;
+  let url = `/api/relatorio/pdf?tipo=${tipo}`;
+  if(mes) url+=`&mes=${mes}`;
+  try{
+    const r = await fetch(url);
+    if(!r.ok){ const d=await r.json(); throw new Error(d.erro||'Erro'); }
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `relatorio_marcos_${new Date().toISOString().slice(0,10)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    closePdfModal();
+    toast('PDF baixado com sucesso!');
+  }catch(err){
+    toast('Erro ao gerar PDF: '+err.message,'error',5000);
+  }finally{
+    btn.textContent='📥 Baixar PDF'; btn.disabled=false;
+  }
+}
+
+function openModal(title, bodyHtml, btns=[]){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=bodyHtml;
+  document.getElementById('modal-footer').innerHTML=btns.map(b=>
+    `<button class="btn ${b.cls}" onclick="${b.fn}">${b.label}</button>`).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('open'); }
+document.getElementById('modal-overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('pdf-overlay').addEventListener('click',e=>{ if(e.target===e.currentTarget) closePdfModal(); });
+
+async function init(){
+  CONFIG = await fetch('/api/config').then(r=>r.json());
+  loadDashboard();
+}
+init();
+</script>
+</body>
+</html>
